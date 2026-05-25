@@ -3,473 +3,584 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LACK FIGHT - TCC Edition</title>
+    <title>LACK FIGHT - Sistemas Advanced Edition</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #000; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
-            font-family: 'Courier New', Courier, monospace; 
-        }
-        #container { position: relative; border: 5px solid #222; box-shadow: 0 0 50px rgba(0,0,0,0.9); background: #111; }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        body { background: #050505; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; }
         
-        /* TELA DE INÍCIO ESTILIZADA */
-        #telaInicio {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, #222 0%, #000 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            text-align: center;
-        }
+        #container { position: relative; border: 10px solid #1a1a1a; background: #000; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,1); }
 
-        /* ESTILO STREET FIGHTER PARA LACK FIGHT */
-        .titulo-jogo {
-            font-size: 110px;
-            font-style: italic;
-            font-weight: 900;
-            text-transform: uppercase;
-            color: #f1c40f; 
-            position: relative;
-            /* Camadas de sombra: contorno preto + extrusão vermelha */
-            text-shadow: 
-                3px 3px 0px #000,
-                -1px -1px 0px #000,
-                1px -1px 0px #000,
-                -1px 1px 0px #000,
-                5px 5px 0px #c0392b, 
-                8px 8px 0px #7b241c,
-                12px 12px 20px rgba(0,0,0,0.8);
-            letter-spacing: 2px;
-            margin-bottom: 0px;
-            transform: skew(-8deg); /* Inclinação dinâmica */
-            display: inline-block;
-        }
-
-        .subtitulo {
-            font-size: 18px;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 8px;
-            margin-bottom: 50px;
-            font-weight: bold;
-            animation: pulsar 1.5s infinite alternate;
-        }
-
-        @keyframes pulsar {
-            from { opacity: 0.4; text-shadow: 0 0 5px #fff; }
-            to { opacity: 1; text-shadow: 0 0 20px #2ecc71; }
-        }
-
-        #btnJogar {
-            padding: 18px 60px;
-            font-size: 28px;
-            background: #2ecc71;
-            border: 4px solid #fff;
-            cursor: pointer;
-            font-weight: bold;
-            color: white;
-            box-shadow: 0 6px #27ae60;
-            transition: 0.1s;
-        }
-        #btnJogar:active { transform: translateY(4px); box-shadow: 0 2px #27ae60; }
-
-        /* INTERFACE DE COMBATE (HUD) */
-        #ui { 
-            position: absolute; 
-            display: flex; 
-            width: 100%; 
-            padding: 30px; 
-            pointer-events: none; 
-            z-index: 10; 
-        }
-        .hud-player { width: 100%; }
-        .nome-lutador { color: white; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; font-size: 18px; }
-        .barra-vida-bg { 
-            height: 35px; 
-            width: 100%; 
-            border: 3px solid #fff; 
-            background-color: #500; 
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-        }
-        #playerHealth, #enemyHealth { 
-            height: 100%; width: 100%; 
-            transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
-        #playerHealth { background: linear-gradient(to bottom, #3498db, #2980b9); float: right; }
-        #enemyHealth { background: linear-gradient(to bottom, #e67e22, #d35400); float: left; }
+        /* INTERFACE DE MENUS */
+        #telaInicio, #mensagem { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
+        .titulo-jogo { font-size: 100px; color: #f1c40f; transform: skew(-15deg); text-shadow: 5px 5px 0 #c0392b; margin-bottom: 40px; }
         
-        #timer { 
-            background: #000; 
-            min-width: 90px; 
-            height: 70px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: #fff; 
-            font-size: 40px; 
-            font-weight: bold; 
-            border: 4px solid #fff; 
-            margin: 0 25px; 
-        }
+        .btn-acao { padding: 20px 50px; font-size: 22px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: 0.3s; margin: 10px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); }
+        .btn-pvc { background: #fff; color: #000; }
+        .btn-pvp { background: #e74c3c; color: #fff; }
+        .btn-revanche { background: #2ecc71; color: #fff; }
+        .btn-acao:hover { transform: scale(1.1); filter: brightness(1.2); }
 
-        #mensagem { 
-            position: absolute; 
-            color: white; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            top: 0; right: 0; bottom: 0; left: 0; 
-            display: none; 
-            background: rgba(0,0,0,0.85); 
-            z-index: 20; 
-        }
+        /* HUD DO COMBATE */
+        #ui { position: absolute; display: none; width: 100%; padding: 40px; pointer-events: none; z-index: 10; justify-content: space-between; }
+        .hud-player { width: 40%; position: relative; }
+        
+        .barra-vida-bg { height: 35px; width: 100%; border: 3px solid #fff; background: #441111; }
+        .barra-vida-interna { height: 100%; width: 100%; transition: width 0.1s; }
+        
+        .barra-especial-bg { height: 12px; width: 100%; border: 2px solid #555; background: #111; margin-top: 5px; box-shadow: 0 0 5px #000; }
+        .barra-especial-interna { height: 100%; width: 0%; background: #f1c40f; transition: width 0.2s; box-shadow: 0 0 10px #f1c40f; }
 
-        canvas { display: block; }
+        #timer { color: #fff; font-size: 70px; font-weight: 900; margin-top: -10px; text-shadow: 3px 3px 0 #000; }
+
+        /* Elementos visuais para contagem de Combos */
+        .combo-texto { position: absolute; top: 65px; font-size: 28px; color: #f39c12; text-shadow: 2px 2px 0 #000; font-style: italic; opacity: 0; transition: opacity 0.2s, transform 0.2s; transform: scale(0.8); }
+        #p1Combo { left: 0; }
+        #p2Combo { right: 0; text-align: right; }
+        .combo-ativo { opacity: 1; transform: scale(1) skewX(-10deg); }
     </style>
 </head>
 <body>
 
     <div id="container">
-        <!-- TELA INICIAL -->
         <div id="telaInicio">
             <h1 class="titulo-jogo">LACK FIGHT</h1>
-            <p class="subtitulo">Cyber-Knight vs Magma-Brute</p>
-            <button id="btnJogar">FIGHT!</button>
-            <p style="margin-top: 30px; color: #555; font-size: 11px;">© 2026 DESENVOLVIMENTO DE SISTEMAS - TCC</p>
+            <button class="btn-acao btn-pvc" onclick="iniciarJogo('PVC')">SISTEMA VS CPU</button>
+            <button class="btn-acao btn-pvp" onclick="iniciarJogo('PVP')">SISTEMA VS SISTEMA</button>
         </div>
 
-        <!-- HUD DO JOGO -->
         <div id="ui">
             <div class="hud-player">
-                <div class="nome-lutador" style="text-align: right;">Cyber-Knight</div>
-                <div class="barra-vida-bg"><div id="playerHealth"></div></div>
+                <div style="color:white; margin-bottom:5px; text-shadow: 2px 2px 0 #000;">P1: MARTIAL HERO</div>
+                <div class="barra-vida-bg"><div id="p1Health" class="barra-vida-interna" style="background: #e74c3c"></div></div>
+                <div class="barra-especial-bg"><div id="p1Energy" class="barra-especial-interna"></div></div>
+                <div id="p1Combo" class="combo-texto">0 HITS</div>
             </div>
             <div id="timer">60</div>
             <div class="hud-player">
-                <div class="nome-lutador">Magma-Brute</div>
-                <div class="barra-vida-bg"><div id="enemyHealth"></div></div>
+                <div id="p2Label" style="color:white; margin-bottom:5px; text-align:right; text-shadow: 2px 2px 0 #000;">P2: SHADOW WARRIOR</div>
+                <div class="barra-vida-bg"><div id="p2Health" class="barra-vida-interna" style="background: #3498db"></div></div>
+                <div class="barra-especial-bg"><div id="p2Energy" class="barra-especial-interna"></div></div>
+                <div id="p2Combo" class="combo-texto">0 HITS</div>
             </div>
         </div>
 
-        <!-- TELA DE FIM DE JOGO -->
-        <div id="mensagem">
-            <h1 id="textoVitoria" style="font-size: 60px; color: #f1c40f;">K.O.</h1>
-            <p style="font-size: 20px;">Pressione 'R' para Revanche</p>
+        <div id="mensagem" style="display:none">
+            <h1 id="textoResultado" style="font-size: 60px; color: #f1c40f; margin-bottom: 20px; text-shadow: 3px 3px 0 #000;">K.O.</h1>
+            <button class="btn-acao btn-revanche" onclick="resetarLuta()">REVANCHE</button>
+            <button class="btn-acao" style="background:#555; color:white" onclick="location.reload()">MENU</button>
         </div>
 
         <canvas id="gameCanvas"></canvas>
     </div>
 
 <script>
-    const canvas = document.querySelector('canvas');
-    const c = canvas.getContext('2d');
+    const canvas = document.querySelector('#gameCanvas');
+    const ctx = canvas.getContext('2d');
     canvas.width = 1024;
     canvas.height = 576;
 
-    const gravidade = 0.7;
-    let jogoAtivo = false;
-    let tremorTempo = 0;
-    let musicaTocando = false;
+    const gravity = 0.8;
+    const path = './Sprites/'; 
 
-    // --- SONS ---
-    const sons = {
-        soco: new Audio('https://www.soundjay.com/human/sounds/punch-on-boxing-bag-01.mp3'),
-        pulo: new Audio('https://www.soundjay.com/button/sounds/button-21.mp3'),
-        hadouken: new Audio('https://www.soundjay.com/magic/sounds/magic-chime-01.mp3')
-    };
-
-    const musicaGuile = new Audio('guile.mp3'); 
-    musicaGuile.loop = true;
-    musicaGuile.volume = 0.25;
-
-    // --- INICIALIZAÇÃO ---
-    document.querySelector('#btnJogar').addEventListener('click', () => {
-        document.querySelector('#telaInicio').style.display = 'none';
-        musicaGuile.play().catch(e => console.log("Verifique se guile.mp3 está na pasta do projeto."));
-        musicaTocando = true;
-        jogoAtivo = true;
-        reiniciar();
-    });
-
-    function tocarSom(nome) {
-        if (musicaTocando) {
-            sons[nome].currentTime = 0;
-            sons[nome].play().catch(() => {});
-        }
-    }
-
-    // --- CLASSES ---
-    class Projetil {
-        constructor({ posicao, velocidade, cor, dano }) {
-            this.posicao = posicao;
-            this.velocidade = velocidade;
-            this.cor = cor;
-            this.raio = 15;
-            this.dano = dano;
-            this.marcadoParaExcluir = false;
-        }
-        desenhar() {
-            c.beginPath();
-            c.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
-            c.fillStyle = this.cor;
-            c.fill();
-            c.shadowBlur = 20;
-            c.shadowColor = this.cor;
-            c.closePath();
-            c.shadowBlur = 0;
-        }
-        atualizar() {
-            this.desenhar();
-            this.posicao.x += this.velocidade.x;
-            if (this.posicao.x > canvas.width || this.posicao.x < 0) this.marcadoParaExcluir = true;
-        }
-    }
-
-    class Personagem {
-        constructor({ posicao, cor, offset, direcao, nome, atributos }) {
-            this.posicao = posicao;
-            this.velocidade = { x: 0, y: 0 };
-            this.cor = cor;
-            this.largura = 60;
-            this.altura = 150;
-            this.direcao = direcao;
-            this.nome = nome;
-            this.atributos = atributos;
-            this.caixaAtaque = {
-                posicao: { x: this.posicao.x, y: this.posicao.y },
-                offset: offset,
-                largura: 120,
-                altura: 50
-            };
-            this.estaAtacando = false;
-            this.vida = 100;
-            this.projeteis = [];
-        }
-
-        desenhar() {
-            c.fillStyle = this.cor;
-            c.fillRect(this.posicao.x, this.posicao.y, this.largura, this.altura);
-            
-            // Visual de "Olhos"
-            c.fillStyle = 'rgba(0,0,0,0.5)';
-            const eyeX = this.direcao === 1 ? this.posicao.x + 35 : this.posicao.x + 10;
-            c.fillRect(eyeX, this.posicao.y + 20, 15, 10);
-
-            if (this.estaAtacando) {
-                c.fillStyle = 'rgba(255,255,255,0.3)';
-                c.fillRect(this.caixaAtaque.posicao.x, this.caixaAtaque.posicao.y, this.caixaAtaque.largura, this.caixaAtaque.altura);
-            }
-        }
-
-        atualizar() {
-            this.desenhar();
-            this.projeteis.forEach((p, i) => {
-                p.atualizar();
-                if (p.marcadoParaExcluir) this.projeteis.splice(i, 1);
-            });
-
-            this.caixaAtaque.posicao.x = this.posicao.x + this.caixaAtaque.offset.x;
-            this.caixaAtaque.posicao.y = this.posicao.y + 30;
-
-            this.posicao.x += this.velocidade.x;
-            this.posicao.y += this.velocidade.y;
-
-            if (this.posicao.y + this.altura + this.velocidade.y >= canvas.height - 60) {
-                this.velocidade.y = 0;
-                this.posicao.y = canvas.height - 60 - this.altura;
-            } else this.velocidade.y += gravidade;
-
-            if (this.posicao.x < 0) this.posicao.x = 0;
-            if (this.posicao.x + this.largura > canvas.width) this.posicao.x = canvas.width - this.largura;
-        }
-
-        atacar() {
-            if (!jogoAtivo) return;
-            this.estaAtacando = true;
-            tocarSom('soco');
-            setTimeout(() => { this.estaAtacando = false; }, 120);
-        }
-
-        lancarPoder() {
-            if (!jogoAtivo || this.projeteis.length >= 2) return;
-            tocarSom('hadouken');
-            this.projeteis.push(new Projetil({
-                posicao: { x: this.posicao.x + (this.direcao === 1 ? 60 : 0), y: this.posicao.y + 60 },
-                velocidade: { x: 13 * this.direcao, y: 0 },
-                cor: this.atributos.corPoder,
-                dano: this.atributos.danoPoder
-            }));
-        }
-    }
-
-    // --- DEFINIÇÃO DOS LUTADORES LACK FIGHT ---
-    const jogador1 = new Personagem({
-        posicao: { x: 150, y: 0 },
-        cor: '#3498db',
-        offset: { x: 0, y: 50 },
-        direcao: 1,
-        nome: 'Cyber-Knight',
-        atributos: {
-            velocidadeMov: 9,
-            danoSoco: 0.5,
-            danoPoder: 8,
-            corPoder: '#00fbff'
-        }
-    });
-
-    const jogador2 = new Personagem({
-        posicao: { x: 800, y: 0 },
-        cor: '#e67e22',
-        offset: { x: -60, y: 50 },
-        direcao: -1,
-        nome: 'Magma-Brute',
-        atributos: {
-            velocidadeMov: 5.5,
-            danoSoco: 0.9,
-            danoPoder: 15,
-            corPoder: '#ff4500'
-        }
-    });
-
-    const teclas = {
-        a: { pressionada: false }, d: { pressionada: false },
-        ArrowRight: { pressionada: false }, ArrowLeft: { pressionada: false }
-    };
-
+    let jogoAtActive = false;
+    let modo = 'PVP';
     let tempo = 60;
     let timerID;
+    let tremor = 0;
+    
+    // --- GESTÃO DE ÁUDIO CONFIGURADA ---
+    const musicaFundo = new Audio('guile.mp3');
+    musicaFundo.loop = true;
+    musicaFundo.volume = 0.15;
 
-    function diminuirTempo() {
-        if (tempo > 0 && jogoAtivo) {
-            timerID = setTimeout(diminuirTempo, 1000);
-            tempo--;
-            document.querySelector('#timer').innerHTML = tempo;
-        }
-        if (tempo === 0) determinarVencedor();
+    // Apenas o som do Kamehameha ativo por enquanto
+    const SOM_KAMEHAMEHA = 'kamehameha.mp3'; 
+
+    function playSound(url, volume = 0.3, startTime = 6) {
+        if (!jogoAtivo) return;
+        const sound = new Audio(url);
+        sound.volume = volume;
+        sound.currentTime = startTime; // Corta o áudio para começar direto no disparo
+        sound.play().catch(err => console.log("Arquivo de som não encontrado ou bloqueado:", url));
     }
 
-    function determinarVencedor() {
-        jogoAtivo = false;
-        clearTimeout(timerID);
-        document.querySelector('#mensagem').style.display = 'flex';
-        const texto = document.querySelector('#textoVitoria');
-        if (jogador1.vida === jogador2.vida) texto.innerHTML = 'DRAW';
-        else texto.innerHTML = jogador1.vida > jogador2.vida ? 'CYBER-KNIGHT WINS' : 'MAGMA-BRUTE WINS';
+    /* --- CLASSE PROJETIL E ULTIMATE --- */
+    class Projetil {
+        constructor({ pos, vel, cor, isUltimate = false }) {
+            this.pos = pos;
+            this.vel = vel;
+            this.cor = cor;
+            this.ativo = true;
+            this.isUltimate = isUltimate;
+            
+            this.raio = isUltimate ? 25 : 12;
+            this.dano = isUltimate ? 25 : 8;
+        }
+        desenhar() {
+            ctx.save();
+            ctx.shadowBlur = this.isUltimate ? 30 : 15;
+            ctx.shadowColor = this.cor;
+            ctx.fillStyle = this.cor;
+            ctx.beginPath();
+            ctx.arc(this.pos.x, this.pos.y, this.raio, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        atualizar() {
+            this.pos.x += this.vel.x;
+            if (this.pos.x < -100 || this.pos.x > canvas.width + 100) this.ativo = false;
+            this.desenhar();
+        }
     }
 
-    function reiniciar() {
-        jogador1.vida = 100; jogador2.vida = 100;
-        jogador1.posicao = { x: 150, y: 0 }; jogador2.posicao = { x: 800, y: 0 };
-        jogador1.projeteis = []; jogador2.projeteis = [];
-        tempo = 60; jogoAtivo = true;
-        document.querySelector('#playerHealth').style.width = '100%';
-        document.querySelector('#enemyHealth').style.width = '100%';
-        document.querySelector('#mensagem').style.display = 'none';
-        clearTimeout(timerID);
-        diminuirTempo();
-    }
-
-    function animar() {
-        window.requestAnimationFrame(animar);
-        c.save();
-        if (tremorTempo > 0) {
-            c.translate((Math.random()-0.5)*12, (Math.random()-0.5)*12);
-            tremorTempo--;
+    /* --- CLASSE SPRITE --- */
+    class Sprite {
+        constructor({ pos, imageSrc, scale = 1 }) {
+            this.pos = pos;
+            this.image = new Image();
+            this.image.src = imageSrc;
+            this.scale = scale;
         }
-
-        // BACKGROUND
-        c.fillStyle = '#0a0a1a';
-        c.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // FLOOR
-        c.fillStyle = '#222';
-        c.fillRect(0, canvas.height - 60, canvas.width, 60);
-        c.strokeStyle = '#444';
-        for(let i=0; i<canvas.width; i+=80) c.strokeRect(i, canvas.height-60, 80, 60);
-
-        jogador1.atualizar();
-        jogador2.atualizar();
-
-        // COLISÕES PODERES
-        [jogador1, jogador2].forEach(j => {
-            const inimigo = j === jogador1 ? jogador2 : jogador1;
-            const hBar = j === jogador1 ? '#enemyHealth' : '#playerHealth';
-            j.projeteis.forEach((p, i) => {
-                if (p.posicao.x + p.raio >= inimigo.posicao.x && 
-                    p.posicao.x - p.raio <= inimigo.posicao.x + inimigo.largura &&
-                    p.posicao.y >= inimigo.posicao.y && p.posicao.y <= inimigo.posicao.y + inimigo.altura) {
-                    inimigo.vida -= p.dano;
-                    tremorTempo = 15;
-                    document.querySelector(hBar).style.width = (inimigo.vida < 0 ? 0 : inimigo.vida) + '%';
-                    j.projeteis.splice(i, 1);
-                }
-            });
-        });
-
-        // INPUTS
-        jogador1.velocidade.x = 0;
-        jogador2.velocidade.x = 0;
-
-        if (jogoAtivo) {
-            if (teclas.a.pressionada) { jogador1.velocidade.x = -jogador1.atributos.velocidadeMov; jogador1.direcao = -1; jogador1.caixaAtaque.offset.x = -60; }
-            else if (teclas.d.pressionada) { jogador1.velocidade.x = jogador1.atributos.velocidadeMov; jogador1.direcao = 1; jogador1.caixaAtaque.offset.x = 0; }
-
-            if (teclas.ArrowLeft.pressionada) { jogador2.velocidade.x = -jogador2.atributos.velocidadeMov; jogador2.direcao = -1; jogador2.caixaAtaque.offset.x = -60; }
-            else if (teclas.ArrowRight.pressionada) { jogador2.velocidade.x = jogador2.atributos.velocidadeMov; jogador2.direcao = 1; jogador2.caixaAtaque.offset.x = 0; }
-        }
-
-        // COLISÕES SOCO
-        if (jogador1.estaAtacando && jogador1.caixaAtaque.posicao.x + jogador1.caixaAtaque.largura >= jogador2.posicao.x && jogador1.caixaAtaque.posicao.x <= jogador2.posicao.x + jogador2.largura && jogador1.caixaAtaque.posicao.y + jogador1.caixaAtaque.altura >= jogador2.posicao.y && jogador1.caixaAtaque.posicao.y <= jogador2.posicao.y + jogador2.altura) {
-            jogador2.vida -= jogador1.atributos.danoSoco;
-            document.querySelector('#enemyHealth').style.width = (jogador2.vida < 0 ? 0 : jogador2.vida) + '%';
-            tremorTempo = 6;
-        }
-
-        if (jogador2.estaAtacando && jogador2.caixaAtaque.posicao.x + jogador2.caixaAtaque.largura >= jogador1.posicao.x && jogador2.caixaAtaque.posicao.x <= jogador1.posicao.x + jogador1.largura && jogador2.caixaAtaque.posicao.y + jogador2.caixaAtaque.altura >= jogador1.posicao.y && jogador2.caixaAtaque.posicao.y <= jogador1.posicao.y + jogador1.altura) {
-            jogador1.vida -= jogador2.atributos.danoSoco;
-            document.querySelector('#playerHealth').style.width = (jogador1.vida < 0 ? 0 : jogador1.vida) + '%';
-            tremorTempo = 6;
-        }
-
-        if (jogador1.vida <= 0 || jogador2.vida <= 0) determinarVencedor();
-        c.restore();
-    }
-
-    animar();
-
-    window.addEventListener('keydown', (event) => {
-        if (jogoAtivo) {
-            switch (event.key) {
-                case 'd': teclas.d.pressionada = true; break;
-                case 'a': teclas.a.pressionada = true; break;
-                case 'w': if (jogador1.velocidade.y === 0) { jogador1.velocidade.y = -20; tocarSom('pulo'); } break;
-                case ' ': jogador1.atacar(); break;
-                case 'q': case 'Q': jogador1.lancarPoder(); break;
-
-                case 'ArrowRight': teclas.ArrowRight.pressionada = true; break;
-                case 'ArrowLeft': teclas.ArrowLeft.pressionada = true; break;
-                case 'ArrowUp': if (jogador2.velocidade.y === 0) { jogador2.velocidade.y = -20; tocarSom('pulo'); } break;
-                case 'Enter': jogador2.atacar(); break;
-                case 'p': case 'P': jogador2.lancarPoder(); break;
+        draw() {
+            if (this.image.complete && this.image.naturalWidth !== 0) {
+                ctx.drawImage(this.image, this.pos.x, this.pos.y, canvas.width, canvas.height);
+            } else {
+                let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, '#111324');
+                grad.addColorStop(1, '#050508');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
         }
-        if (event.key.toLowerCase() === 'r') reiniciar();
+        update() { this.draw(); }
+    }
+
+    /* --- CLASSE FIGHTER --- */
+    class Fighter {
+        constructor({ pos, vel, offset, imageSrc, framesMax, sprites }) {
+            this.pos = pos;
+            this.vel = vel;
+            this.width = 50;
+            this.height = 150;
+            this.lado = 1; 
+            
+            this.image = new Image();
+            this.image.src = imageSrc;
+            this.scale = 2.5;
+            this.framesMax = framesMax;
+            this.framesCurrent = 0;
+            this.framesElapsed = 0;
+            this.framesHold = 6;
+            this.offset = offset;
+            this.sprites = sprites;
+            
+            this.isAttacking = false;
+            this.health = 100;
+            this.energy = 0; 
+            this.magias = []; 
+            
+            this.comboCount = 0;
+            this.comboTimer = null;
+
+            this.attackBox = { pos: { x: this.pos.x, y: this.pos.y }, width: 120, height: 50 };
+
+            for (const sprite in this.sprites) {
+                sprites[sprite].image = new Image();
+                sprites[sprite].image.src = sprites[sprite].imageSrc;
+            }
+        }
+
+        draw() {
+            ctx.save();
+            if (this.lado === -1) {
+                ctx.scale(-1, 1);
+                const destX = -this.pos.x + this.offset.x - (this.image.width / this.framesMax) * this.scale;
+                ctx.drawImage(
+                    this.image,
+                    this.framesCurrent * (this.image.width / this.framesMax),
+                    0,
+                    this.image.width / this.framesMax,
+                    this.image.height,
+                    destX,
+                    this.pos.y - this.offset.y,
+                    (this.image.width / this.framesMax) * this.scale,
+                    this.image.height * this.scale
+                );
+            } else {
+                ctx.drawImage(
+                    this.image,
+                    this.framesCurrent * (this.image.width / this.framesMax),
+                    0,
+                    this.image.width / this.framesMax,
+                    this.image.height,
+                    this.pos.x - this.offset.x,
+                    this.pos.y - this.offset.y,
+                    (this.image.width / this.framesMax) * this.scale,
+                    this.image.height * this.scale
+                );
+            }
+            ctx.restore();
+        }
+
+        update() {
+            this.draw();
+            this.framesElapsed++;
+            if (this.framesElapsed % this.framesHold === 0) {
+                if (this.framesCurrent < this.framesMax - 1) this.framesCurrent++;
+                else this.framesCurrent = 0;
+            }
+
+            this.attackBox.pos.x = this.lado === 1 ? this.pos.x + this.width : this.pos.x - this.attackBox.width;
+            this.attackBox.pos.y = this.pos.y + 50;
+
+            this.pos.x += this.vel.x;
+            this.pos.y += this.vel.y;
+
+            if (this.pos.y + this.height + this.vel.y >= canvas.height - 60) {
+                this.vel.y = 0;
+                this.pos.y = 366; 
+            } else this.vel.y += gravity;
+
+            if (this.pos.x < 0) this.pos.x = 0;
+            if (this.pos.x + this.width > canvas.width) this.pos.x = canvas.width - this.width;
+        }
+
+        ganharEnergia(qtd) {
+            this.energy += qtd;
+            if (this.energy > 100) this.energy = 100;
+        }
+
+        adicionarCombo(idSeletorDom) {
+            this.comboCount++;
+            const elemento = document.querySelector(idSeletorDom);
+            elemento.innerText = `${this.comboCount} ${this.comboCount === 1 ? 'HIT' : 'HITS'}`;
+            elemento.classList.add('combo-ativo');
+
+            if (this.comboTimer) clearTimeout(this.comboTimer);
+
+            this.comboTimer = setTimeout(() => {
+                this.comboCount = 0;
+                elemento.classList.remove('combo-ativo');
+            }, 1200);
+        }
+
+        attack() {
+            if (!jogoAtivo) return;
+            this.switchSprite('attack1');
+            this.isAttacking = true;
+            setTimeout(() => { this.isAttacking = false; }, 400);
+        }
+
+        lancarMagia(cor) {
+            if (!jogoAtivo || this.magias.length >= 2) return; 
+            this.magias.push(new Projetil({
+                pos: { x: this.lado === 1 ? this.pos.x + this.width + 10 : this.pos.x - 10, y: this.pos.y + 65 },
+                vel: { x: 12 * this.lado, y: 0 },
+                cor: cor
+            }));
+        }
+
+        lancarUltimate(cor) {
+            if (!jogoAtivo || this.energy < 100) return;
+            this.energy = 0; 
+            
+            // Toca apenas o som do Kamehameha (cortando o início do carregamento de voz)
+            // mude o '1.5' se precisar ajustar o momento do estouro!
+            playSound(SOM_KAMEHAMEHA, 0.6, 1.5); 
+
+            this.magias.push(new Projetil({
+                pos: { x: this.lado === 1 ? this.pos.x + this.width + 20 : this.pos.x - 20, y: this.pos.y + 65 },
+                vel: { x: 20 * this.lado, y: 0 }, 
+                cor: cor,
+                isUltimate: true
+            }));
+        }
+
+        switchSprite(sprite) {
+            if (this.image === this.sprites.attack1.image && this.framesCurrent < this.sprites.attack1.framesMax - 1) return;
+            if (this.image === this.sprites.takeHit.image && this.framesCurrent < this.sprites.takeHit.framesMax - 1) return;
+
+            if (this.image !== this.sprites[sprite].image) {
+                this.image = this.sprites[sprite].image;
+                this.framesMax = this.sprites[sprite].framesMax;
+                this.framesCurrent = 0;
+            }
+        }
+    }
+
+    const cenario = new Sprite({ pos: { x: 0, y: 0 }, imageSrc: path + 'background.png' });
+
+    const player = new Fighter({
+        pos: { x: 150, y: 0 },
+        vel: { x: 0, y: 0 },
+        offset: { x: 215, y: 157 },
+        imageSrc: path + 'Idle.png',
+        framesMax: 8,
+        sprites: {
+            idle: { imageSrc: path + 'Idle.png', framesMax: 8 },
+            run: { imageSrc: path + 'Run.png', framesMax: 8 },
+            jump: { imageSrc: path + 'Jump.png', framesMax: 2 },
+            fall: { imageSrc: path + 'Fall.png', framesMax: 2 },
+            attack1: { imageSrc: path + 'Attack1.png', framesMax: 6 },
+            takeHit: { imageSrc: path + 'Take Hit.png', framesMax: 4 }
+        }
+    });
+
+    const enemy = new Fighter({
+        pos: { x: 800, y: 0 },
+        vel: { x: 0, y: 0 },
+        offset: { x: 215, y: 157 },
+        imageSrc: path + 'Idle.png',
+        framesMax: 8,
+        sprites: {
+            idle: { imageSrc: path + 'Idle.png', framesMax: 8 },
+            run: { imageSrc: path + 'Run.png', framesMax: 8 },
+            jump: { imageSrc: path + 'Jump.png', framesMax: 2 },
+            fall: { imageSrc: path + 'Fall.png', framesMax: 2 },
+            attack1: { imageSrc: path + 'Attack1.png', framesMax: 6 },
+            takeHit: { imageSrc: path + 'Take Hit.png', framesMax: 4 }
+        }
+    });
+
+    const keys = { a: { pressed: false }, d: { pressed: false }, ArrowRight: { pressed: false }, ArrowLeft: { pressed: false } };
+
+    /* --- MÓDULO INTELIGÊNCIA ARTIFICIAL --- */
+    function processarIA() {
+        if (modo !== 'PVC' || !jogoAtivo) return;
+        const distanciaX = player.pos.x - enemy.pos.x;
+
+        if (Math.abs(distanciaX) > 110) {
+            enemy.vel.x = distanciaX > 0 ? 3 : -3;
+            enemy.switchSprite('run');
+        } else {
+            enemy.vel.x = 0;
+            enemy.switchSprite('idle');
+            if (Math.random() < 0.05) enemy.attack();
+        }
+
+        if (enemy.energy >= 100) {
+            enemy.lancarUltimate('#f1c40f');
+        } else if (Math.abs(distanciaX) > 320 && Math.random() < 0.015) {
+            enemy.lancarMagia('#e67e22');
+        }
+    }
+
+    function retanguloColisao({ atqBox, alvo }) {
+        return (
+            atqBox.pos.x <= alvo.pos.x + alvo.width &&
+            atqBox.pos.x + atqBox.width >= alvo.pos.x &&
+            atqBox.pos.y <= alvo.pos.y + alvo.height &&
+            atqBox.pos.y + atqBox.height >= alvo.pos.y
+        );
+    }
+
+    function checarColisoes() {
+        if (player.pos.x <= enemy.pos.x) {
+            player.lado = 1;
+            enemy.lado = -1;
+        } else {
+            player.lado = -1;
+            enemy.lado = 1;
+        }
+
+        // Player 1 ataca Player 2
+        if (player.isAttacking && player.framesCurrent === 4 && retanguloColisao({ atqBox: player.attackBox, alvo: enemy })) {
+            player.isAttacking = false;
+            enemy.health -= 5;
+            player.ganharEnergia(20); 
+            player.adicionarCombo('#p1Combo'); 
+            enemy.switchSprite('takeHit');
+            tremor = 5;
+            document.querySelector('#p2Health').style.width = Math.max(0, enemy.health) + '%';
+        }
+
+        // Player 2 ataca Player 1
+        if (enemy.isAttacking && enemy.framesCurrent === 4 && retanguloColisao({ atqBox: enemy.attackBox, alvo: player })) {
+            enemy.isAttacking = false;
+            player.health -= 5;
+            enemy.ganharEnergia(20); 
+            enemy.adicionarCombo('#p2Combo'); 
+            player.switchSprite('takeHit');
+            tremor = 5;
+            document.querySelector('#p1Health').style.width = Math.max(0, player.health) + '%';
+        }
+
+        // Dano de Magias / Ultimates
+        for (let i = player.magias.length - 1; i >= 0; i--) {
+            const m = player.magias[i];
+            m.atualizar();
+
+            if (m.pos.x >= enemy.pos.x && m.pos.x <= enemy.pos.x + enemy.width &&
+                m.pos.y >= enemy.pos.y && m.pos.y <= enemy.pos.y + enemy.height) {
+                enemy.health -= m.dano; 
+                player.adicionarCombo('#p1Combo'); 
+                enemy.switchSprite('takeHit');
+                player.magias.splice(i, 1);
+                tremor = m.isUltimate ? 15 : 7; 
+                document.querySelector('#p2Health').style.width = Math.max(0, enemy.health) + '%';
+                continue;
+            }
+            if (!m.ativo) player.magias.splice(i, 1);
+        }
+
+        for (let i = enemy.magias.length - 1; i >= 0; i--) {
+            const m = enemy.magias[i];
+            m.atualizar();
+
+            if (m.pos.x >= player.pos.x && m.pos.x <= player.pos.x + player.width &&
+                m.pos.y >= player.pos.y && m.pos.y <= player.pos.y + player.height) {
+                player.health -= m.dano;
+                enemy.adicionarCombo('#p2Combo'); 
+                player.switchSprite('takeHit');
+                enemy.magias.splice(i, 1);
+                tremor = m.isUltimate ? 15 : 7;
+                document.querySelector('#p1Health').style.width = Math.max(0, player.health) + '%';
+                continue;
+            }
+            if (!m.ativo) enemy.magias.splice(i, 1);
+        }
+
+        document.querySelector('#p1Energy').style.width = player.energy + '%';
+        document.querySelector('#p2Energy').style.width = enemy.energy + '%';
+
+        if (player.health <= 0 || enemy.health <= 0) finalizarCombate();
+    }
+
+    function animate() {
+        window.requestAnimationFrame(animate);
+        
+        ctx.save();
+        if (tremor > 0) {
+            ctx.translate((Math.random() - 0.5) * tremor, (Math.random() - 0.5) * tremor);
+            tremor--;
+        }
+
+        cenario.update();
+
+        ctx.fillStyle = 'rgba(20, 20, 20, 0.4)';
+        ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+
+        player.update();
+        enemy.update();
+
+        player.vel.x = 0;
+        if (keys.a.pressed) {
+            player.vel.x = -5;
+            player.switchSprite('run');
+        } else if (keys.d.pressed) {
+            player.vel.x = 5;
+            player.switchSprite('run');
+        } else {
+            player.switchSprite('idle');
+        }
+
+        if (player.vel.y < 0) player.switchSprite('jump');
+        else if (player.vel.y > 0) player.switchSprite('fall');
+
+        if (modo === 'PVC') {
+            processarIA();
+        } else {
+            enemy.vel.x = 0;
+            if (keys.ArrowLeft.pressed) {
+                enemy.vel.x = -5;
+                enemy.switchSprite('run');
+            } else if (keys.ArrowRight.pressed) {
+                enemy.vel.x = 5;
+                enemy.switchSprite('run');
+            } else {
+                enemy.switchSprite('idle');
+            }
+
+            if (enemy.vel.y < 0) enemy.switchSprite('jump');
+            else if (enemy.vel.y > 0) enemy.switchSprite('fall');
+        }
+
+        checarColisoes();
+        ctx.restore();
+    }
+
+    function iniciarJogo(m) {
+        modo = m;
+        document.querySelector('#telaInicio').style.display = 'none';
+        document.querySelector('#ui').style.display = 'flex';
+        
+        musicaFundo.play().catch(() => {});
+        
+        resetarLuta();
+        animate();
+    }
+
+    function resetarLuta() {
+        player.health = 100; enemy.health = 100;
+        player.energy = 0; enemy.energy = 0; 
+        player.comboCount = 0; enemy.comboCount = 0; 
+        player.pos = { x: 150, y: 0 }; enemy.pos = { x: 800, y: 0 };
+        player.magias = []; enemy.magias = [];
+        document.querySelector('#p1Health').style.width = '100%';
+        document.querySelector('#p2Health').style.width = '100%';
+        document.querySelector('#p1Energy').style.width = '0%';
+        document.querySelector('#p2Energy').style.width = '0%';
+        document.querySelector('#p1Combo').classList.remove('combo-ativo');
+        document.querySelector('#p2Combo').classList.remove('combo-ativo');
+        tempo = 60;
+        jogoAtivo = true; 
+        document.querySelector('#mensagem').style.display = 'none';
+        
+        if (timerID) clearInterval(timerID);
+        timerID = setInterval(() => {
+            if (jogoAtivo) {
+                tempo--;
+                document.querySelector('#timer').innerText = tempo;
+                if (tempo <= 0) finalizarCombate();
+            }
+        }, 1000);
+    }
+
+    function finalizarCombate() {
+        jogoAtivo = false;
+        clearInterval(timerID);
+        document.querySelector('#mensagem').style.display = 'flex';
+        const txt = document.querySelector('#textoResultado');
+        if (player.health === enemy.health) txt.innerText = "EMPATE TÉCNICO";
+        else txt.innerText = player.health > enemy.health ? "PLAYER 1 VENCEU!" : "PLAYER 2 VENCEU!";
+    }
+
+    /* --- MAPEAMENTO DE ENTRADAS --- */
+    window.addEventListener('keydown', (event) => {
+        if (!jogoAtivo) return;
+        switch (event.key) {
+            // Player 1
+            case 'd': keys.d.pressed = true; break;
+            case 'a': keys.a.pressed = true; break;
+            case 'w': 
+                if (player.vel.y === 0) {
+                    player.vel.y = -18;
+                }
+                break;
+            case ' ': player.attack(); break;
+            case 'q': player.lancarMagia('#2ecc71'); break;
+            case 'e': player.lancarUltimate('#f1c40f'); break; 
+
+            // Player 2
+            case 'ArrowRight': if (modo === 'PVP') keys.ArrowRight.pressed = true; break;
+            case 'ArrowLeft': if (modo === 'PVP') keys.ArrowLeft.pressed = true; break;
+            case 'ArrowUp': 
+                if (modo === 'PVP' && enemy.vel.y === 0) {
+                    enemy.vel.y = -18;
+                }
+                break;
+            case 'Enter': if (modo === 'PVP') enemy.attack(); break;
+            case 'p': if (modo === 'PVP') enemy.lancarMagia('#3498db'); break;
+            case 'o': if (modo === 'PVP') enemy.lancarUltimate('#f1c40f'); break; 
+        }
     });
 
     window.addEventListener('keyup', (event) => {
         switch (event.key) {
-            case 'd': teclas.d.pressionada = false; break;
-            case 'a': teclas.a.pressionada = false; break;
-            case 'ArrowRight': teclas.ArrowRight.pressionada = false; break;
-            case 'ArrowLeft': teclas.ArrowLeft.pressionada = false; break;
+            case 'd': keys.d.pressed = false; break;
+            case 'a': keys.a.pressed = false; break;
+            case 'ArrowRight': keys.ArrowRight.pressed = false; break;
+            case 'ArrowLeft': keys.ArrowLeft.pressed = false; break;
         }
     });
 </script>
