@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>LACK FIGHT - Alpha Version</title>
+    <style>
+        body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        canvas { border: 5px solid #333; background: #000; image-rendering: pixelated; }
+        #hud { position: absolute; top: 20px; width: 1024px; display: flex; justify-content: space-between; padding: 0 50px; box-sizing: border-box; }
+        .barra-bg { width: 400px; height: 30px; background: #441111; border: 2px solid #fff; }
+        .barra-vida { width: 100%; height: 100%; background: #e74c3c; transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+    <div id="hud">
+        <div class="barra-bg"><div id="p1Health" class="barra-vida"></div></div>
+        <div class="barra-bg"><div id="p2Health" class="barra-vida" style="background: #3498db"></div></div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.querySelector('#gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1024;
+    canvas.height = 576;
+
+    const gravity = 0.7;
+    // Caminho exato baseado na sua imagem de pastas
+    // O ponto indica a pasta atual, entra em 'Sprites' e a barra final é essencial
+const path = './Sprites/';
+
+    class Sprite {
+        constructor({ pos, imageSrc, framesMax = 1, offset = { x: 0, y: 0 }, scale = 2.5 }) {
+            this.pos = pos;
+            this.image = new Image();
+            this.image.src = imageSrc;
+            this.scale = scale;
+            this.framesMax = framesMax;
+            this.framesCurrent = 0;
+            this.framesElapsed = 0;
+            this.framesHold = 8;
+            this.offset = offset;
+        }
+
+        draw() {
+            ctx.drawImage(
+                this.image,
+                this.framesCurrent * (this.image.width / this.framesMax),
+                0,
+                this.image.width / this.framesMax,
+                this.image.height,
+                this.pos.x - this.offset.x,
+                this.pos.y - this.offset.y,
+                (this.image.width / this.framesMax) * this.scale,
+                this.image.height * this.scale
+            );
+        }
+
+        update() {
+            this.draw();
+            this.framesElapsed++;
+            if (this.framesElapsed % this.framesHold === 0) {
+                if (this.framesCurrent < this.framesMax - 1) this.framesCurrent++;
+                else this.framesCurrent = 0;
+            }
+        }
+    }
+
+    class Fighter extends Sprite {
+        constructor({ pos, vel, color, imageSrc, framesMax, offset, sprites }) {
+            super({ pos, imageSrc, framesMax, offset });
+            this.vel = vel;
+            this.width = 50;
+            this.height = 150;
+            this.sprites = sprites;
+            this.isAttacking = false;
+            this.health = 100;
+
+            for (const sprite in this.sprites) {
+                sprites[sprite].image = new Image();
+                sprites[sprite].image.src = sprites[sprite].imageSrc;
+            }
+        }
+
+        update() {
+            this.draw();
+            this.framesElapsed++;
+            if (this.framesElapsed % this.framesHold === 0) {
+                if (this.framesCurrent < this.framesMax - 1) this.framesCurrent++;
+                else this.framesCurrent = 0;
+            }
+
+            this.pos.x += this.vel.x;
+            this.pos.y += this.vel.y;
+
+            if (this.pos.y + this.height + this.vel.y >= canvas.height - 60) {
+                this.vel.y = 0;
+                this.pos.y = 366;
+            } else this.vel.y += gravity;
+        }
+
+        attack() {
+            this.switchSprite('attack1');
+            this.isAttacking = true;
+            setTimeout(() => { this.isAttacking = false; }, 100);
+        }
+
+        switchSprite(sprite) {
+            // Override para ataque
+            if (this.image === this.sprites.attack1.image && this.framesCurrent < this.sprites.attack1.framesMax - 1) return;
+
+            if (this.image !== this.sprites[sprite].image) {
+                this.image = this.sprites[sprite].image;
+                this.framesMax = this.sprites[sprite].framesMax;
+                this.framesCurrent = 0;
+            }
+        }
+    }
+
+    const player = new Fighter({
+        pos: { x: 100, y: 0 },
+        vel: { x: 0, y: 0 },
+        offset: { x: 215, y: 157 },
+        imageSrc: path + 'Idle.png',
+        framesMax: 8,
+        sprites: {
+            idle: { imageSrc: path + 'Idle.png', framesMax: 8 },
+            run: { imageSrc: path + 'Run.png', framesMax: 8 },
+            jump: { imageSrc: path + 'Jump.png', framesMax: 2 },
+            fall: { imageSrc: path + 'Fall.png', framesMax: 2 },
+            attack1: { imageSrc: path + 'Attack1.png', framesMax: 6 }
+        }
+    });
+
+    const enemy = new Fighter({
+        pos: { x: 800, y: 0 },
+        vel: { x: 0, y: 0 },
+        color: 'blue',
+        offset: { x: 215, y: 157 },
+        imageSrc: path + 'Idle.png',
+        framesMax: 8,
+        sprites: {
+            idle: { imageSrc: path + 'Idle.png', framesMax: 8 },
+            run: { imageSrc: path + 'Run.png', framesMax: 8 },
+            jump: { imageSrc: path + 'Jump.png', framesMax: 2 },
+            fall: { imageSrc: path + 'Fall.png', framesMax: 2 },
+            attack1: { imageSrc: path + 'Attack1.png', framesMax: 6 }
+        }
+    });
+
+    const keys = { a: { pressed: false }, d: { pressed: false }, ArrowRight: { pressed: false }, ArrowLeft: { pressed: false } };
+
+    function animate() {
+        window.requestAnimationFrame(animate);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Chão
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+
+        player.update();
+        enemy.update();
+
+        // Movimentação Player 1
+        player.vel.x = 0;
+        if (keys.a.pressed) {
+            player.vel.x = -5;
+            player.switchSprite('run');
+        } else if (keys.d.pressed) {
+            player.vel.x = 5;
+            player.switchSprite('run');
+        } else {
+            player.switchSprite('idle');
+        }
+
+        if (player.vel.y < 0) player.switchSprite('jump');
+        else if (player.vel.y > 0) player.switchSprite('fall');
+
+        // Colisão simples
+        if (player.isAttacking && player.framesCurrent === 4) {
+            if (player.pos.x + 50 >= enemy.pos.x && player.pos.x <= enemy.pos.x + 50) {
+                enemy.health -= 2;
+                document.querySelector('#p2Health').style.width = enemy.health + '%';
+            }
+        }
+    }
+
+    animate();
+
+    window.addEventListener('keydown', (event) => {
+        switch (event.key) {
+            case 'd': keys.d.pressed = true; break;
+            case 'a': keys.a.pressed = true; break;
+            case 'w': player.vel.y = -20; break;
+            case ' ': player.attack(); break;
+        }
+    });
+
+    window.addEventListener('keyup', (event) => {
+        switch (event.key) {
+            case 'd': keys.d.pressed = false; break;
+            case 'a': keys.a.pressed = false; break;
+        }
+    });
+</script>
+</body>
+</html>
