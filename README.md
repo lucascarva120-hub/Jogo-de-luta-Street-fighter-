@@ -109,7 +109,7 @@ HUD mais avançada
 Sprites profissionais
 👨‍💻 Autor
 
-Desenvolvido por [Seu Nome Aqui]
+Desenvolvido por Lucas Carvalho 
 Projeto de TCC — 2º Ano Técnico em Desenvolvimento de Sistemas
 
 ⭐ Objetivo do Projeto
