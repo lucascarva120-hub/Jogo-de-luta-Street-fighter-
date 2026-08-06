@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LACK FIGHT - Sistemas Advanced Edition</title>
+    <title>LACK FIGHT - Fixed Shield Positioning</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
         body { background: #050505; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; }
         
         #container { position: relative; border: 10px solid #1a1a1a; background: #000; border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,1); }
 
-        /* INTERFACE DE MENUS */
-        #telaInicio, #mensagem { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
-        .titulo-jogo { font-size: 100px; color: #f1c40f; transform: skew(-15deg); text-shadow: 5px 5px 0 #c0392b; margin-bottom: 40px; }
+        /* INTERFACE DE MENUS E PAUSE */
+        #telaInicio, #mensagem, #telaPause { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; background: radial-gradient(circle, rgba(26,26,26,0.95) 0%, rgba(0,0,0,0.98) 100%); }
+        #telaPause { display: none; z-index: 200; }
         
+        .titulo-jogo { font-size: 100px; color: #f1c40f; transform: skew(-15deg); text-shadow: 5px 5px 0 #c0392b; margin-bottom: 40px; }
+        .titulo-pause { font-size: 80px; color: #3498db; transform: skew(-10deg); text-shadow: 4px 4px 0 #1a5276; margin-bottom: 30px; }
+
         .btn-acao { padding: 20px 50px; font-size: 22px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; transition: 0.3s; margin: 10px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); }
         .btn-pvc { background: #fff; color: #000; }
         .btn-pvp { background: #e74c3c; color: #fff; }
@@ -28,11 +31,27 @@
         .barra-vida-interna { height: 100%; width: 100%; transition: width 0.1s; }
         
         .barra-especial-bg { height: 12px; width: 100%; border: 2px solid #555; background: #111; margin-top: 5px; box-shadow: 0 0 5px #000; }
-        .barra-especial-interna { height: 100%; width: 0%; background: #f1c40f; transition: width 0.2s; box-shadow: 0 0 10px #f1c40f; }
+        .barra-especial-interna { height: 100%; width: 0%; background: #f1c40f; transition: width 0.2s, background-color 0.2s; box-shadow: 0 0 10px #f1c40f; }
+
+        /* ANIMAÇÃO DE BRILHO DO ESPECIAL PRONTO NO HUD */
+        .especial-pronto {
+            background: #fff !important;
+            animation: brilhoEspecial 0.6s infinite alternate;
+        }
+
+        @keyframes brilhoEspecial {
+            0% {
+                background-color: #f1c40f;
+                box-shadow: 0 0 8px #f1c40f, 0 0 15px #f39c12;
+            }
+            100% {
+                background-color: #ffffff;
+                box-shadow: 0 0 18px #ffffff, 0 0 30px #f1c40f;
+            }
+        }
 
         #timer { color: #fff; font-size: 70px; font-weight: 900; margin-top: -10px; text-shadow: 3px 3px 0 #000; }
 
-        /* Elementos visuais para contagem de Combos */
         .combo-texto { position: absolute; top: 65px; font-size: 28px; color: #f39c12; text-shadow: 2px 2px 0 #000; font-style: italic; opacity: 0; transition: opacity 0.2s, transform 0.2s; transform: scale(0.8); }
         #p1Combo { left: 0; }
         #p2Combo { right: 0; text-align: right; }
@@ -42,12 +61,22 @@
 <body>
 
     <div id="container">
+        <!-- Tela Inicial -->
         <div id="telaInicio">
             <h1 class="titulo-jogo">LACK FIGHT</h1>
             <button class="btn-acao btn-pvc" onclick="iniciarJogo('PVC')">SISTEMA VS CPU</button>
             <button class="btn-acao btn-pvp" onclick="iniciarJogo('PVP')">SISTEMA VS SISTEMA</button>
         </div>
 
+        <!-- Tela de Pause -->
+        <div id="telaPause">
+            <h1 class="titulo-pause">JOGO PAUSADO</h1>
+            <button class="btn-acao btn-revanche" onclick="alternarPause()">CONTINUAR (ESC)</button>
+            <button class="btn-acao" style="background:#e74c3c; color:white" onclick="resetarLuta(); alternarPause();">REINICIAR LUTA</button>
+            <button class="btn-acao" style="background:#555; color:white" onclick="location.reload()">MENU PRINCIPAL</button>
+        </div>
+
+        <!-- HUD -->
         <div id="ui">
             <div class="hud-player">
                 <div style="color:white; margin-bottom:5px; text-shadow: 2px 2px 0 #000;">P1: MARTIAL HERO</div>
@@ -64,6 +93,7 @@
             </div>
         </div>
 
+        <!-- Fim de Jogo -->
         <div id="mensagem" style="display:none">
             <h1 id="textoResultado" style="font-size: 60px; color: #f1c40f; margin-bottom: 20px; text-shadow: 3px 3px 0 #000;">K.O.</h1>
             <button class="btn-acao btn-revanche" onclick="resetarLuta()">REVANCHE</button>
@@ -82,29 +112,44 @@
     const gravity = 0.8;
     const path = './Sprites/'; 
 
-    let jogoAtActive = false;
+    let jogoAtivo = false;
+    let jogoPausado = false;
     let modo = 'PVP';
     let tempo = 60;
     let timerID;
     let tremor = 0;
     
-    // --- GESTÃO DE ÁUDIO CONFIGURADA ---
+    // --- GESTÃO DE ÁUDIO ---
     const musicaFundo = new Audio('guile.mp3');
     musicaFundo.loop = true;
     musicaFundo.volume = 0.15;
 
-    // Apenas o som do Kamehameha ativo por enquanto
     const SOM_KAMEHAMEHA = 'kamehameha.mp3'; 
 
-    function playSound(url, volume = 0.3, startTime = 6) {
-        if (!jogoAtivo) return;
+    function playSound(url, volume = 0.3, startTime = 0) {
+        if (!jogoAtivo || jogoPausado) return;
         const sound = new Audio(url);
         sound.volume = volume;
-        sound.currentTime = startTime; // Corta o áudio para começar direto no disparo
-        sound.play().catch(err => console.log("Arquivo de som não encontrado ou bloqueado:", url));
+        sound.currentTime = startTime; 
+        sound.play().catch(err => console.log("Som bloqueado ou não encontrado:", url));
     }
 
-    /* --- CLASSE PROJETIL E ULTIMATE --- */
+    function alternarPause() {
+        if (!jogoAtivo) return;
+        
+        jogoPausado = !jogoPausado;
+        const menuPause = document.querySelector('#telaPause');
+        
+        if (jogoPausado) {
+            menuPause.style.display = 'flex';
+            musicaFundo.pause();
+        } else {
+            menuPause.style.display = 'none';
+            musicaFundo.play().catch(() => {});
+        }
+    }
+
+    /* --- CLASSE PROJETIL --- */
     class Projetil {
         constructor({ pos, vel, cor, isUltimate = false }) {
             this.pos = pos;
@@ -112,7 +157,6 @@
             this.cor = cor;
             this.ativo = true;
             this.isUltimate = isUltimate;
-            
             this.raio = isUltimate ? 25 : 12;
             this.dano = isUltimate ? 25 : 8;
         }
@@ -127,7 +171,7 @@
             ctx.restore();
         }
         atualizar() {
-            this.pos.x += this.vel.x;
+            if (!jogoPausado) this.pos.x += this.vel.x;
             if (this.pos.x < -100 || this.pos.x > canvas.width + 100) this.ativo = false;
             this.desenhar();
         }
@@ -157,7 +201,7 @@
 
     /* --- CLASSE FIGHTER --- */
     class Fighter {
-        constructor({ pos, vel, offset, imageSrc, framesMax, sprites }) {
+        constructor({ pos, vel, offset, imageSrc, framesMax, sprites, corRastro }) {
             this.pos = pos;
             this.vel = vel;
             this.width = 50;
@@ -175,12 +219,21 @@
             this.sprites = sprites;
             
             this.isAttacking = false;
+            this.isDefending = false;
             this.health = 100;
             this.energy = 0; 
             this.magias = []; 
+            this.magiaCooldown = false;
             
             this.comboCount = 0;
             this.comboTimer = null;
+
+            this.dead = false;
+
+            this.isDashing = false;
+            this.dashCooldown = false;
+            this.rastros = []; 
+            this.corRastro = corRastro || 'rgba(231, 76, 60, 0.4)';
 
             this.attackBox = { pos: { x: this.pos.x, y: this.pos.y }, width: 120, height: 50 };
 
@@ -191,6 +244,101 @@
         }
 
         draw() {
+            if (!this.dead) {
+                // RASTROS DO DASH
+                this.rastros.forEach((rastro) => {
+                    ctx.save();
+                    ctx.globalAlpha = rastro.alpha;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.corRastro;
+                    
+                    if (rastro.lado === -1) {
+                        ctx.scale(-1, 1);
+                        const destX = -rastro.x + this.offset.x - (rastro.img.width / rastro.framesMax) * this.scale;
+                        ctx.drawImage(rastro.img, rastro.frameX * (rastro.img.width / rastro.framesMax), 0, rastro.img.width / rastro.framesMax, rastro.img.height, destX, rastro.y - this.offset.y, (rastro.img.width / rastro.framesMax) * this.scale, rastro.img.height * this.scale);
+                    } else {
+                        ctx.drawImage(rastro.img, rastro.frameX * (rastro.img.width / rastro.framesMax), 0, rastro.img.width / rastro.framesMax, rastro.img.height, rastro.x - this.offset.x, rastro.y - this.offset.y, (rastro.img.width / rastro.framesMax) * this.scale, rastro.img.height * this.scale);
+                    }
+                    ctx.restore();
+                });
+
+                // AURA NÍTIDA DO ESPECIAL (100%)
+                if (this.energy >= 100) {
+                    ctx.save();
+                    const frameW = this.image.width / this.framesMax;
+                    const frameH = this.image.height;
+
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = frameW;
+                    tempCanvas.height = frameH;
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    tempCtx.drawImage(
+                        this.image,
+                        this.framesCurrent * frameW, 0, frameW, frameH,
+                        0, 0, frameW, frameH
+                    );
+
+                    tempCtx.globalCompositeOperation = 'source-in';
+                    tempCtx.fillStyle = '#f1c40f';
+                    tempCtx.fillRect(0, 0, frameW, frameH);
+
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#f1c40f';
+                    ctx.globalAlpha = 0.8;
+
+                    const offsets = [
+                        { x: -3, y: 0 }, { x: 3, y: 0 },
+                        { x: 0, y: -3 }, { x: 0, y: 3 }
+                    ];
+
+                    offsets.forEach(off => {
+                        ctx.save();
+                        if (this.lado === -1) {
+                            ctx.scale(-1, 1);
+                            const destX = -this.pos.x + this.offset.x - frameW * this.scale + off.x;
+                            ctx.drawImage(tempCanvas, destX, (this.pos.y - this.offset.y) + off.y, frameW * this.scale, frameH * this.scale);
+                        } else {
+                            const destX = this.pos.x - this.offset.x + off.x;
+                            ctx.drawImage(tempCanvas, destX, (this.pos.y - this.offset.y) + off.y, frameW * this.scale, frameH * this.scale);
+                        }
+                        ctx.restore();
+                    });
+
+                    ctx.restore();
+                }
+
+                // BARREIRA DE DEFESA (SIMÉTRICA E AFASTADA DO CORPO)
+                if (this.isDefending) {
+                    ctx.save();
+                    
+                    const distanciaFrontal = 35;
+                    const shieldX = this.lado === 1 
+                        ? this.pos.x + this.width + distanciaFrontal 
+                        : this.pos.x - distanciaFrontal;
+
+                    const startY = this.pos.y + 10;
+                    const endY = this.pos.y + this.height - 10;
+                    const curveOffset = this.lado === 1 ? 25 : -25;
+
+                    ctx.lineWidth = 7;
+                    ctx.strokeStyle = '#00d2ff';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#3498db';
+
+                    ctx.beginPath();
+                    ctx.moveTo(shieldX, startY);
+                    ctx.quadraticCurveTo(shieldX + curveOffset, startY + (this.height - 20) / 2, shieldX, endY);
+                    ctx.stroke();
+
+                    ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+            }
+
+            // DESENHO PRINCIPAL DO PERSONAGEM
             ctx.save();
             if (this.lado === -1) {
                 ctx.scale(-1, 1);
@@ -224,10 +372,52 @@
 
         update() {
             this.draw();
-            this.framesElapsed++;
-            if (this.framesElapsed % this.framesHold === 0) {
-                if (this.framesCurrent < this.framesMax - 1) this.framesCurrent++;
-                else this.framesCurrent = 0;
+            
+            if (jogoPausado) return; 
+
+            if (this.dead) {
+                this.framesElapsed++;
+                if (this.framesElapsed % this.framesHold === 0) {
+                    if (this.framesCurrent < this.framesMax - 1) {
+                        this.framesCurrent++;
+                    }
+                }
+                
+                this.pos.y += this.vel.y;
+                if (this.pos.y + this.height + this.vel.y >= canvas.height - 60) {
+                    this.vel.y = 0;
+                    this.pos.y = 366; 
+                } else this.vel.y += gravity;
+                return; 
+            }
+
+            if (this.vel.y < 0) {
+                this.framesCurrent = 0; 
+            } else if (this.vel.y > 0) {
+                this.framesCurrent = 0; 
+            } else {
+                this.framesElapsed++;
+                if (this.framesElapsed % this.framesHold === 0) {
+                    if (this.framesCurrent < this.framesMax - 1) this.framesCurrent++;
+                    else this.framesCurrent = 0;
+                }
+            }
+
+            for (let i = this.rastros.length - 1; i >= 0; i--) {
+                this.rastros[i].alpha -= 0.08;
+                if (this.rastros[i].alpha <= 0) this.rastros.splice(i, 1);
+            }
+
+            if (this.isDashing) {
+                this.rastros.push({
+                    x: this.pos.x,
+                    y: this.pos.y,
+                    img: this.image,
+                    frameX: this.framesCurrent,
+                    framesMax: this.framesMax,
+                    lado: this.lado,
+                    alpha: 0.6
+                });
             }
 
             this.attackBox.pos.x = this.lado === 1 ? this.pos.x + this.width : this.pos.x - this.attackBox.width;
@@ -243,6 +433,18 @@
 
             if (this.pos.x < 0) this.pos.x = 0;
             if (this.pos.x + this.width > canvas.width) this.pos.x = canvas.width - this.width;
+        }
+
+        dash(direcao) {
+            if (this.dashCooldown || !jogoAtivo || jogoPausado || this.dead || this.isDefending) return;
+            
+            this.isDashing = true;
+            this.dashCooldown = true;
+            this.switchSprite('run');
+            this.vel.x = direcao * 18; 
+
+            setTimeout(() => { this.isDashing = false; }, 200);
+            setTimeout(() => { this.dashCooldown = false; }, 600);
         }
 
         ganharEnergia(qtd) {
@@ -265,27 +467,28 @@
         }
 
         attack() {
-            if (!jogoAtivo) return;
+            if (!jogoAtivo || jogoPausado || this.isDashing || this.dead || this.isDefending) return; 
             this.switchSprite('attack1');
             this.isAttacking = true;
             setTimeout(() => { this.isAttacking = false; }, 400);
         }
 
         lancarMagia(cor) {
-            if (!jogoAtivo || this.magias.length >= 2) return; 
+            if (!jogoAtivo || jogoPausado || this.magias.length >= 2 || this.isDashing || this.dead || this.isDefending || this.magiaCooldown) return; 
+            
             this.magias.push(new Projetil({
                 pos: { x: this.lado === 1 ? this.pos.x + this.width + 10 : this.pos.x - 10, y: this.pos.y + 65 },
                 vel: { x: 12 * this.lado, y: 0 },
                 cor: cor
             }));
+
+            this.magiaCooldown = true;
+            setTimeout(() => { this.magiaCooldown = false; }, 1500);
         }
 
         lancarUltimate(cor) {
-            if (!jogoAtivo || this.energy < 100) return;
+            if (!jogoAtivo || jogoPausado || this.energy < 100 || this.isDashing || this.dead || this.isDefending) return;
             this.energy = 0; 
-            
-            // Toca apenas o som do Kamehameha (cortando o início do carregamento de voz)
-            // mude o '1.5' se precisar ajustar o momento do estouro!
             playSound(SOM_KAMEHAMEHA, 0.6, 1.5); 
 
             this.magias.push(new Projetil({
@@ -296,7 +499,22 @@
             }));
         }
 
+        receberDano(danoBase, idSeletorDom) {
+            let danoFinal = danoBase;
+            if (this.isDefending) {
+                danoFinal = Math.ceil(danoBase * 0.2); 
+            } else {
+                this.switchSprite('takeHit');
+            }
+
+            this.health -= danoFinal;
+            if (this.health < 0) this.health = 0;
+            document.querySelector(idSeletorDom).style.width = this.health + '%';
+        }
+
         switchSprite(sprite) {
+            if (this.image === this.sprites.death.image) return;
+
             if (this.image === this.sprites.attack1.image && this.framesCurrent < this.sprites.attack1.framesMax - 1) return;
             if (this.image === this.sprites.takeHit.image && this.framesCurrent < this.sprites.takeHit.framesMax - 1) return;
 
@@ -308,7 +526,7 @@
         }
     }
 
-    const cenario = new Sprite({ pos: { x: 0, y: 0 }, imageSrc: path + 'background.png' });
+    const cenario = new Sprite({ pos: { x: 0, y: 0 }, imageSrc: path + 'fundo.jpg' });
 
     const player = new Fighter({
         pos: { x: 150, y: 0 },
@@ -316,13 +534,15 @@
         offset: { x: 215, y: 157 },
         imageSrc: path + 'Idle.png',
         framesMax: 8,
+        corRastro: 'rgba(231, 76, 60, 0.5)',
         sprites: {
             idle: { imageSrc: path + 'Idle.png', framesMax: 8 },
             run: { imageSrc: path + 'Run.png', framesMax: 8 },
             jump: { imageSrc: path + 'Jump.png', framesMax: 2 },
             fall: { imageSrc: path + 'Fall.png', framesMax: 2 },
             attack1: { imageSrc: path + 'Attack1.png', framesMax: 6 },
-            takeHit: { imageSrc: path + 'Take Hit.png', framesMax: 4 }
+            takeHit: { imageSrc: path + 'Take Hit.png', framesMax: 4 },
+            death: { imageSrc: path + 'Death.png', framesMax: 6 } 
         }
     });
 
@@ -332,28 +552,51 @@
         offset: { x: 215, y: 157 },
         imageSrc: path + 'Idle.png',
         framesMax: 8,
+        corRastro: 'rgba(52, 152, 219, 0.5)',
         sprites: {
             idle: { imageSrc: path + 'Idle.png', framesMax: 8 },
             run: { imageSrc: path + 'Run.png', framesMax: 8 },
             jump: { imageSrc: path + 'Jump.png', framesMax: 2 },
             fall: { imageSrc: path + 'Fall.png', framesMax: 2 },
             attack1: { imageSrc: path + 'Attack1.png', framesMax: 6 },
-            takeHit: { imageSrc: path + 'Take Hit.png', framesMax: 4 }
+            takeHit: { imageSrc: path + 'Take Hit.png', framesMax: 4 },
+            death: { imageSrc: path + 'Death.png', framesMax: 6 } 
         }
     });
 
-    const keys = { a: { pressed: false }, d: { pressed: false }, ArrowRight: { pressed: false }, ArrowLeft: { pressed: false } };
+    const keys = { 
+        a: { pressed: false }, 
+        d: { pressed: false }, 
+        s: { pressed: false },
+        ArrowRight: { pressed: false }, 
+        ArrowLeft: { pressed: false },
+        ArrowDown: { pressed: false }
+    };
 
-    /* --- MÓDULO INTELIGÊNCIA ARTIFICIAL --- */
     function processarIA() {
-        if (modo !== 'PVC' || !jogoAtivo) return;
+        if (modo !== 'PVC' || !jogoAtivo || jogoPausado || enemy.isDashing || enemy.dead) return;
         const distanciaX = player.pos.x - enemy.pos.x;
 
+        if (player.isAttacking && Math.abs(distanciaX) < 120 && Math.random() < 0.4) {
+            enemy.isDefending = true;
+            enemy.vel.x = 0;
+            enemy.switchSprite('idle');
+            return;
+        } else {
+            enemy.isDefending = false;
+        }
+
+        if (Math.abs(distanciaX) > 400 && Math.random() < 0.01) {
+            enemy.dash(distanciaX > 0 ? 1 : -1);
+            return;
+        }
+
         if (Math.abs(distanciaX) > 110) {
-            enemy.vel.x = distanciaX > 0 ? 3 : -3;
+            if (enemy.vel.y === 0) enemy.vel.x = distanciaX > 0 ? 3 : -3;
+            else enemy.vel.x = distanciaX > 0 ? 2 : -2; 
             enemy.switchSprite('run');
         } else {
-            enemy.vel.x = 0;
+            if (enemy.vel.y === 0) enemy.vel.x = 0;
             enemy.switchSprite('idle');
             if (Math.random() < 0.05) enemy.attack();
         }
@@ -375,6 +618,8 @@
     }
 
     function checarColisoes() {
+        if (!jogoAtivo || jogoPausado) return;
+
         if (player.pos.x <= enemy.pos.x) {
             player.lado = 1;
             enemy.lado = -1;
@@ -383,41 +628,33 @@
             enemy.lado = 1;
         }
 
-        // Player 1 ataca Player 2
-        if (player.isAttacking && player.framesCurrent === 4 && retanguloColisao({ atqBox: player.attackBox, alvo: enemy })) {
+        if (player.isAttacking && player.framesCurrent === 4 && !enemy.isDashing && retanguloColisao({ atqBox: player.attackBox, alvo: enemy })) {
             player.isAttacking = false;
-            enemy.health -= 5;
+            enemy.receberDano(5, '#p2Health');
             player.ganharEnergia(20); 
             player.adicionarCombo('#p1Combo'); 
-            enemy.switchSprite('takeHit');
-            tremor = 5;
-            document.querySelector('#p2Health').style.width = Math.max(0, enemy.health) + '%';
+            tremor = enemy.isDefending ? 2 : 5;
         }
 
-        // Player 2 ataca Player 1
-        if (enemy.isAttacking && enemy.framesCurrent === 4 && retanguloColisao({ atqBox: enemy.attackBox, alvo: player })) {
+        if (enemy.isAttacking && enemy.framesCurrent === 4 && !player.isDashing && retanguloColisao({ atqBox: enemy.attackBox, alvo: player })) {
             enemy.isAttacking = false;
-            player.health -= 5;
+            player.receberDano(5, '#p1Health');
             enemy.ganharEnergia(20); 
             enemy.adicionarCombo('#p2Combo'); 
-            player.switchSprite('takeHit');
-            tremor = 5;
-            document.querySelector('#p1Health').style.width = Math.max(0, player.health) + '%';
+            tremor = player.isDefending ? 2 : 5;
         }
 
-        // Dano de Magias / Ultimates
         for (let i = player.magias.length - 1; i >= 0; i--) {
             const m = player.magias[i];
             m.atualizar();
 
-            if (m.pos.x >= enemy.pos.x && m.pos.x <= enemy.pos.x + enemy.width &&
+            if (!enemy.isDashing && m.pos.x >= enemy.pos.x && m.pos.x <= enemy.pos.x + enemy.width &&
                 m.pos.y >= enemy.pos.y && m.pos.y <= enemy.pos.y + enemy.height) {
-                enemy.health -= m.dano; 
+                
+                enemy.receberDano(m.dano, '#p2Health');
                 player.adicionarCombo('#p1Combo'); 
-                enemy.switchSprite('takeHit');
                 player.magias.splice(i, 1);
                 tremor = m.isUltimate ? 15 : 7; 
-                document.querySelector('#p2Health').style.width = Math.max(0, enemy.health) + '%';
                 continue;
             }
             if (!m.ativo) player.magias.splice(i, 1);
@@ -427,72 +664,135 @@
             const m = enemy.magias[i];
             m.atualizar();
 
-            if (m.pos.x >= player.pos.x && m.pos.x <= player.pos.x + player.width &&
+            if (!player.isDashing && m.pos.x >= player.pos.x && m.pos.x <= player.pos.x + player.width &&
                 m.pos.y >= player.pos.y && m.pos.y <= player.pos.y + player.height) {
-                player.health -= m.dano;
+                
+                player.receberDano(m.dano, '#p1Health');
                 enemy.adicionarCombo('#p2Combo'); 
-                player.switchSprite('takeHit');
                 enemy.magias.splice(i, 1);
                 tremor = m.isUltimate ? 15 : 7;
-                document.querySelector('#p1Health').style.width = Math.max(0, player.health) + '%';
                 continue;
             }
             if (!m.ativo) enemy.magias.splice(i, 1);
         }
 
-        document.querySelector('#p1Energy').style.width = player.energy + '%';
-        document.querySelector('#p2Energy').style.width = enemy.energy + '%';
+        const p1Barra = document.querySelector('#p1Energy');
+        const p2Barra = document.querySelector('#p2Energy');
 
-        if (player.health <= 0 || enemy.health <= 0) finalizarCombate();
+        p1Barra.style.width = player.energy + '%';
+        p2Barra.style.width = enemy.energy + '%';
+
+        if (player.energy >= 100) p1Barra.classList.add('especial-pronto');
+        else p1Barra.classList.remove('especial-pronto');
+
+        if (enemy.energy >= 100) p2Barra.classList.add('especial-pronto');
+        else p2Barra.classList.remove('especial-pronto');
+
+        if (player.health <= 0 || enemy.health <= 0) gerenciarNocaute();
+    }
+
+    function gerenciarNocaute() {
+        jogoAtivo = false; 
+        clearInterval(timerID);
+
+        if (player.health <= 0) {
+            player.dead = true;
+            player.vel.x = 0;
+            player.image = player.sprites.death.image;
+            player.framesMax = player.sprites.death.framesMax;
+            player.framesCurrent = 0;
+        }
+        if (enemy.health <= 0) {
+            enemy.dead = true;
+            enemy.vel.x = 0;
+            enemy.image = enemy.sprites.death.image;
+            enemy.framesMax = enemy.sprites.death.framesMax;
+            enemy.framesCurrent = 0;
+        }
+
+        setTimeout(() => {
+            finalizarCombate();
+        }, 1500); 
     }
 
     function animate() {
         window.requestAnimationFrame(animate);
         
         ctx.save();
-        if (tremor > 0) {
+        if (tremor > 0 && !jogoPausado) {
             ctx.translate((Math.random() - 0.5) * tremor, (Math.random() - 0.5) * tremor);
             tremor--;
         }
 
         cenario.update();
 
-        ctx.fillStyle = 'rgba(20, 20, 20, 0.4)';
-        ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
-
         player.update();
         enemy.update();
 
-        player.vel.x = 0;
-        if (keys.a.pressed) {
-            player.vel.x = -5;
-            player.switchSprite('run');
-        } else if (keys.d.pressed) {
-            player.vel.x = 5;
-            player.switchSprite('run');
-        } else {
-            player.switchSprite('idle');
+        if (jogoAtivo && !jogoPausado && !player.isDashing) {
+            const estaNoChao = player.vel.y === 0;
+
+            player.isDefending = keys.s.pressed && estaNoChao;
+
+            if (player.isDefending) {
+                player.vel.x = 0;
+                player.switchSprite('idle');
+            } else if (estaNoChao) {
+                if (keys.a.pressed) {
+                    player.vel.x = -5;
+                    player.switchSprite('run');
+                } else if (keys.d.pressed) {
+                    player.vel.x = 5;
+                    player.switchSprite('run');
+                } else {
+                    player.vel.x = 0;
+                    player.switchSprite('idle');
+                }
+            } else {
+                if (keys.a.pressed) player.vel.x = -4.5;
+                else if (keys.d.pressed) player.vel.x = 4.5;
+                else player.vel.x *= 0.95; 
+            }
         }
 
-        if (player.vel.y < 0) player.switchSprite('jump');
-        else if (player.vel.y > 0) player.switchSprite('fall');
+        if (!player.dead && !jogoPausado) {
+            if (player.vel.y < 0) player.switchSprite('jump');
+            else if (player.vel.y > 0) player.switchSprite('fall');
+        }
 
         if (modo === 'PVC') {
             processarIA();
         } else {
-            enemy.vel.x = 0;
-            if (keys.ArrowLeft.pressed) {
-                enemy.vel.x = -5;
-                enemy.switchSprite('run');
-            } else if (keys.ArrowRight.pressed) {
-                enemy.vel.x = 5;
-                enemy.switchSprite('run');
-            } else {
-                enemy.switchSprite('idle');
+            if (jogoAtivo && !jogoPausado && !enemy.isDashing) {
+                const estaNoChao = enemy.vel.y === 0;
+
+                enemy.isDefending = keys.ArrowDown.pressed && estaNoChao;
+
+                if (enemy.isDefending) {
+                    enemy.vel.x = 0;
+                    enemy.switchSprite('idle');
+                } else if (estaNoChao) {
+                    if (keys.ArrowLeft.pressed) {
+                        enemy.vel.x = -5;
+                        enemy.switchSprite('run');
+                    } else if (keys.ArrowRight.pressed) {
+                        enemy.vel.x = 5;
+                        enemy.switchSprite('run');
+                    } else {
+                        enemy.vel.x = 0;
+                        enemy.switchSprite('idle');
+                    }
+                } else {
+                    if (keys.ArrowLeft.pressed) enemy.vel.x = -4.5;
+                    else if (keys.ArrowRight.pressed) enemy.vel.x = 4.5;
+                    else enemy.vel.x *= 0.95;
+                }
             }
 
-            if (enemy.vel.y < 0) enemy.switchSprite('jump');
-            else if (enemy.vel.y > 0) enemy.switchSprite('fall');
+            if (!enemy.dead && !jogoPausado) {
+                if (enemy.vel.y < 0) enemy.switchSprite('jump');
+                else if (enemy.vel.y > 0) enemy.switchSprite('fall');
+            }
         }
 
         checarColisoes();
@@ -515,30 +815,40 @@
         player.energy = 0; enemy.energy = 0; 
         player.comboCount = 0; enemy.comboCount = 0; 
         player.pos = { x: 150, y: 0 }; enemy.pos = { x: 800, y: 0 };
+        player.vel = { x: 0, y: 0 }; enemy.vel = { x: 0, y: 0 };
         player.magias = []; enemy.magias = [];
+        player.rastros = []; enemy.rastros = [];
+        player.dead = false; enemy.dead = false;
+        player.isDefending = false; enemy.isDefending = false;
+        
+        player.image = player.sprites.idle.image; player.framesMax = player.sprites.idle.framesMax; player.framesCurrent = 0;
+        enemy.image = enemy.sprites.idle.image; enemy.framesMax = enemy.sprites.idle.framesMax; enemy.framesCurrent = 0;
+
         document.querySelector('#p1Health').style.width = '100%';
         document.querySelector('#p2Health').style.width = '100%';
         document.querySelector('#p1Energy').style.width = '0%';
         document.querySelector('#p2Energy').style.width = '0%';
+        document.querySelector('#p1Energy').classList.remove('especial-pronto');
+        document.querySelector('#p2Energy').classList.remove('especial-pronto');
         document.querySelector('#p1Combo').classList.remove('combo-ativo');
         document.querySelector('#p2Combo').classList.remove('combo-ativo');
         tempo = 60;
         jogoAtivo = true; 
+        jogoPausado = false;
         document.querySelector('#mensagem').style.display = 'none';
+        document.querySelector('#telaPause').style.display = 'none';
         
         if (timerID) clearInterval(timerID);
         timerID = setInterval(() => {
-            if (jogoAtivo) {
+            if (jogoAtivo && !jogoPausado) {
                 tempo--;
                 document.querySelector('#timer').innerText = tempo;
-                if (tempo <= 0) finalizarCombate();
+                if (tempo <= 0) gerenciarNocaute();
             }
         }, 1000);
     }
 
     function finalizarCombate() {
-        jogoAtivo = false;
-        clearInterval(timerID);
         document.querySelector('#mensagem').style.display = 'flex';
         const txt = document.querySelector('#textoResultado');
         if (player.health === enemy.health) txt.innerText = "EMPATE TÉCNICO";
@@ -547,26 +857,48 @@
 
     /* --- MAPEAMENTO DE ENTRADAS --- */
     window.addEventListener('keydown', (event) => {
-        if (!jogoAtivo) return;
+        if (event.key === 'Escape') {
+            alternarPause();
+            return;
+        }
+
+        if (!jogoAtivo || jogoPausado) return;
+
         switch (event.key) {
-            // Player 1
             case 'd': keys.d.pressed = true; break;
             case 'a': keys.a.pressed = true; break;
+            case 's': keys.s.pressed = true; break;
             case 'w': 
-                if (player.vel.y === 0) {
+                if (player.vel.y === 0 && !player.isDashing && !player.dead && !player.isDefending) {
                     player.vel.y = -18;
+                    if (keys.d.pressed) player.vel.x = 5;
+                    if (keys.a.pressed) player.vel.x = -5;
                 }
                 break;
             case ' ': player.attack(); break;
             case 'q': player.lancarMagia('#2ecc71'); break;
             case 'e': player.lancarUltimate('#f1c40f'); break; 
+            case 'Shift': 
+                if (event.location === 1) { 
+                    if (keys.d.pressed) player.dash(1);
+                    else if (keys.a.pressed) player.dash(-1);
+                    else player.dash(player.lado); 
+                } 
+                else if (event.location === 2 && modo === 'PVP') { 
+                    if (keys.ArrowRight.pressed) enemy.dash(1);
+                    else if (keys.ArrowLeft.pressed) enemy.dash(-1);
+                    else enemy.dash(enemy.lado);
+                }
+                break;
 
-            // Player 2
             case 'ArrowRight': if (modo === 'PVP') keys.ArrowRight.pressed = true; break;
             case 'ArrowLeft': if (modo === 'PVP') keys.ArrowLeft.pressed = true; break;
+            case 'ArrowDown': if (modo === 'PVP') keys.ArrowDown.pressed = true; break;
             case 'ArrowUp': 
-                if (modo === 'PVP' && enemy.vel.y === 0) {
+                if (modo === 'PVP' && enemy.vel.y === 0 && !enemy.isDashing && !enemy.dead && !enemy.isDefending) {
                     enemy.vel.y = -18;
+                    if (keys.ArrowRight.pressed) enemy.vel.x = 5;
+                    if (keys.ArrowLeft.pressed) enemy.vel.x = -5;
                 }
                 break;
             case 'Enter': if (modo === 'PVP') enemy.attack(); break;
@@ -579,8 +911,10 @@
         switch (event.key) {
             case 'd': keys.d.pressed = false; break;
             case 'a': keys.a.pressed = false; break;
+            case 's': keys.s.pressed = false; break;
             case 'ArrowRight': keys.ArrowRight.pressed = false; break;
             case 'ArrowLeft': keys.ArrowLeft.pressed = false; break;
+            case 'ArrowDown': keys.ArrowDown.pressed = false; break;
         }
     });
 </script>
